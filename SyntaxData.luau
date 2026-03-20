@@ -33,9 +33,8 @@ local saveQueue = {}
 local saveThreadRunning = false
 local validators = {}
 local requestTimestamps = {}
-local dataStoreCache = {}  -- кэш успешных DataStore
+local dataStoreCache = {}
 
--- Базовая функция получения DataStore с возможностью fallback
 local function getDataStoreWithFallback(baseName, scope, maxAttempts)
 	maxAttempts = maxAttempts or 3
 	local cacheKey = baseName .. "_" .. scope
@@ -44,14 +43,12 @@ local function getDataStoreWithFallback(baseName, scope, maxAttempts)
 	end
 
 	local namesToTry = { baseName }
-	-- добавляем варианты на случай удаления
 	for i = 1, maxAttempts - 1 do
 		table.insert(namesToTry, baseName .. "_" .. tostring(os.time() + i))
 	end
 
 	for _, name in ipairs(namesToTry) do
 		local ds = DataStoreService:GetDataStore(name, scope)
-		-- пробуем выполнить простую операцию, чтобы проверить доступ
 		local success, err = pcall(function()
 			ds:GetAsync("__test__")
 		end)
@@ -64,9 +61,8 @@ local function getDataStoreWithFallback(baseName, scope, maxAttempts)
 	error("No available DataStore found for " .. baseName)
 end
 
--- Обёртка для получения DataStore с фиксированным именем на основе GameId
 local function getDataStore(scope)
-	local baseName = "DataVault_" .. game.GameId  -- уникальное для каждой игры
+	local baseName = "DataVault_" .. game.GameId
 	return getDataStoreWithFallback(baseName, scope)
 end
 
@@ -89,7 +85,6 @@ local function loadFromDataStore(dataStore, key, default)
 			if data then
 				return data
 			else
-				-- данных нет, создаём новую запись
 				local newData = deepClone(default)
 				pcall(function()
 					dataStore:SetAsync(key, newData)
